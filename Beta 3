@@ -1,0 +1,131 @@
+import pygame
+import os.path
+pygame.init()
+
+width = 1000
+height = 500
+character_loc_x = width / 2
+character_loc_y = height / 2
+win = pygame.display.set_mode((width, height))
+
+# win.blit(pygame.image.load(os.path.join("./../HERO_MOVEMENT/standing.png")), (character_loc_x, character_loc_y + 50))
+
+# Movement
+left_movement = [None] * 9
+for picIndex in range(1, 10):
+    left_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "L" + str(picIndex) + ".png"))
+    picIndex += 1
+
+right_movement = [None] * 9
+for picIndex in range(1, 10):
+    right_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "R" + str(picIndex) + ".png"))
+    picIndex += 1
+
+after_jump_movement = [None] * 6
+for picIndex in range(1, 7):
+    after_jump_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "J" + str(picIndex) +
+                                                                       ".png"))
+    picIndex += 1
+
+# Background
+bg_img = pygame.image.load(os.path.join("download.jpg"))
+bg_scale = pygame.transform.scale(bg_img, (width, height))
+
+class Hero:
+
+    def __init__(self, charac_x_loc, charac_y_loc):
+        # Walking
+        self.char_x_loc = charac_x_loc
+        self.char_y_loc = charac_y_loc
+        self.vel = 10
+        self.face_right = False
+        self.face_left = False
+        self.stepIndex = 0
+        self.jump_vel = 10
+        self.after_jumpIndex = 0
+        self.jump = False
+        self.after_jump = False
+
+    def move_hero(self, userInput):
+        if userInput[pygame.K_RIGHT] and self.char_x_loc < width - 50:
+            self.char_x_loc += self.vel
+            self.face_right = True
+            self.face_left = False
+        elif userInput[pygame.K_LEFT] and self.char_x_loc > 0:
+            self.char_x_loc -= self.vel
+            self.face_right = False
+            self.face_left = True
+        else:
+            win.blit(pygame.image.load(os.path.join("./../HERO_MOVEMENT/standing.png")), (self.char_x_loc, self.char_y_loc))
+            self.stepIndex = 0
+
+    def draw(self, win):
+        if self.stepIndex >= 9:
+            self.stepIndex = 0
+
+        if self.after_jumpIndex >= 6:
+            self.after_jumpIndex = 0
+
+        if self.face_left:
+            win.blit(left_movement[self.stepIndex // 4], (self.char_x_loc, self.char_y_loc))
+            self.stepIndex += 1
+            self.face_left = False
+        elif self.face_right:
+            win.blit(right_movement[self.stepIndex // 4], (self.char_x_loc, self.char_y_loc))
+            self.face_right = False
+            self.stepIndex += 1
+        elif self.after_jump:
+            win.blit(after_jump_movement[self.after_jumpIndex], (self.char_x_loc, self.char_y_loc))
+            pygame.time.delay(40)
+            self.after_jumpIndex += 1
+            pygame.time.delay(40)
+            if self.after_jumpIndex >= 6:
+                self.after_jump = False
+        else:
+            win.blit(pygame.image.load(os.path.join("./../HERO_MOVEMENT/standing.png")), (self.char_x_loc, self.char_y_loc))
+
+
+    def jump_motion(self, userInput):
+        if userInput[pygame.K_SPACE] and self.jump is False:
+            self.jump = True
+        if self.jump:
+            self.char_y_loc -= self.jump_vel * 4
+            self.jump_vel -= 1
+        if self.jump_vel < -10:
+            self.jump_vel = 10
+            self.jump = False
+            self.after_jump = True
+
+
+
+
+def draw_game():
+    win.fill((0, 0, 0))
+    win.blit(bg_scale, (0, 0))
+    player.draw(win)
+    pygame.time.delay(30)
+    pygame.display.update()
+
+
+
+player = Hero(character_loc_x, character_loc_y + 50)
+
+# Main Loop
+run = True
+while run:
+
+    # Quit Game
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+
+    # Input
+    user_input = pygame.key.get_pressed()
+
+    # Movement
+    player.move_hero(user_input)
+    player.jump_motion(user_input)
+
+    # Draw Game in Window
+    draw_game()
+
