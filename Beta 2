@@ -1,0 +1,147 @@
+import pygame
+import os.path
+pygame.init()
+
+width = 1000
+height = 500
+win = pygame.display.set_mode((int(width), int(height)))
+CIRCLE_X_AXIS = width / 2
+CIRCLE_Y_AXIS = (height / 2) + 50
+velocity = 10
+background_image = pygame.image.load(os.path.join('./../CreateGames/download.jpg'))
+back_ground_transform = pygame.transform.scale(background_image, (width, height))
+
+
+# Movement
+after_jump_movement = [None] * 7
+for picIndex in range(1, 7):
+    after_jump_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "J" + str(picIndex) + ".png"))
+    picIndex += 1
+
+left_movement = [None] * 10
+for picIndex in range(1, 10):
+    left_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "L" + str(picIndex) + ".png"))
+    picIndex += 1
+
+right_movement = [None] * 10
+for picIndex in range(1, 10):
+    right_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "R" + str(picIndex) + ".png"))
+    picIndex += 1
+
+jump = False
+after_jump = False
+press_left_arrow = False
+press_right_arrow = False
+Push = True
+background_stop = True
+being_left_press = False
+being_right_press = False
+jump_vel = 10
+step_index = 0
+walking_index = 0
+i = 0
+
+
+def draw_game():
+    global step_index
+    global after_jump
+    global walking_index
+    global press_left_arrow
+    global press_right_arrow
+    global Push
+    global background_stop
+    global i
+    global being_left_press, being_right_press
+    global width, height
+
+    being_left_press = press_left_arrow
+    being_right_press = press_right_arrow
+
+    if jump:
+        win.blit(back_ground_transform, (0, 0))
+
+    if after_jump:
+        win.blit(back_ground_transform, (0, 0))
+
+    if jump and (press_right_arrow or press_left_arrow):
+        background_stop = True
+
+
+    if background_stop:
+        win.blit(back_ground_transform, (i, 0))
+        win.blit(back_ground_transform, (width + i, 0))
+
+        if i == -width:
+            i = 0
+        i -= 10
+
+    if step_index >= 6:
+        step_index = 0
+
+    if walking_index >= 9:
+        walking_index = 0
+
+    if after_jump:
+        win.blit(after_jump_movement[step_index], (CIRCLE_X_AXIS, CIRCLE_Y_AXIS))
+        step_index += 1
+        pygame.time.delay(150)
+        Push = False
+        if step_index >= 6:
+            after_jump = False
+            Push = True
+            win.blit(back_ground_transform, (0, 0))
+
+    elif press_left_arrow:
+        win.blit(left_movement[walking_index], (CIRCLE_X_AXIS, CIRCLE_Y_AXIS))
+        walking_index += 1
+        press_left_arrow = False
+        background_stop = True
+    elif press_right_arrow:
+        win.blit(right_movement[walking_index], (CIRCLE_X_AXIS, CIRCLE_Y_AXIS))
+        walking_index += 1
+        press_right_arrow = False
+        background_stop = True
+
+    else:
+        win.blit(pygame.image.load(os.path.join("./../HERO_MOVEMENT/standing.png")), (CIRCLE_X_AXIS, CIRCLE_Y_AXIS))
+        background_stop = False
+
+
+run = True
+while run:
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+
+
+    draw_game()
+
+    userInput = pygame.key.get_pressed()
+
+    if userInput[pygame.K_SPACE]:
+        jump = True
+
+    elif (userInput[pygame.K_LEFT] or userInput[pygame.K_a]) and CIRCLE_X_AXIS > 0 and Push:
+        CIRCLE_X_AXIS -= velocity
+        press_left_arrow = True
+
+    elif (userInput[pygame.K_RIGHT] or userInput[pygame.K_d]) and CIRCLE_X_AXIS < width - 50 and Push:
+        CIRCLE_X_AXIS += velocity
+        press_right_arrow = True
+    else:
+        pass
+
+    if jump:
+        CIRCLE_Y_AXIS -= jump_vel
+        jump_vel -= 1
+        print("print:", jump_vel, ", Circle Y axis:", CIRCLE_Y_AXIS)
+        pygame.time.delay(20)
+        if jump_vel < -10:
+            jump = False
+            after_jump = True
+            background_stop = False
+            jump_vel = 10
+
+    pygame.time.delay(40)
+    pygame.display.update()
