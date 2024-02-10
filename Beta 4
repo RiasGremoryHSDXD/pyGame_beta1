@@ -1,0 +1,172 @@
+import pygame
+import os.path
+pygame.init()
+
+width = 1000
+height = 500
+character_loc_x = width / 2
+character_loc_y = height / 2
+win = pygame.display.set_mode((width, height))
+
+# Movement
+left_movement = [None] * 9
+for picIndex in range(1, 10):
+    left_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "L" + str(picIndex) + ".png"))
+    picIndex += 1
+
+right_movement = [None] * 9
+for picIndex in range(1, 10):
+    right_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "R" + str(picIndex) + ".png"))
+    picIndex += 1
+
+after_jump_movement = [None] * 6
+for picIndex in range(1, 7):
+    after_jump_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "J" + str(picIndex) +
+                                                                       ".png"))
+    picIndex += 1
+
+# Bullet
+bullet_img = pygame.transform.scale(pygame.image.load(os.path.join("./../Bullet/light_bullet.png")), (10, 10))
+
+
+# Background
+bg_img = pygame.image.load(os.path.join("download.jpg"))
+bg_scale = pygame.transform.scale(bg_img, (width, height))
+
+
+class Hero:
+
+    def __init__(self, charac_x_loc, charac_y_loc):
+        # Walking
+        self.char_x_loc = charac_x_loc
+        self.char_y_loc = charac_y_loc
+        self.vel = 10
+        self.face_right = False
+        self.face_left = False
+        self.stepIndex = 0
+        self.jump_vel = 10
+        self.after_jumpIndex = 0
+        self.jump = False
+        self.after_jump = False
+        self.fire_bullet = []
+        self.press_fire = 0
+
+    def move_hero(self):
+        if user_input[pygame.K_RIGHT] and self.char_x_loc < width - 50 and self.after_jump is False:
+            self.char_x_loc += self.vel
+            self.face_right = True
+            self.face_left = False
+            self.press_fire = 1
+
+        elif user_input[pygame.K_LEFT] and self.char_x_loc > 0 and self.after_jump is False:
+            self.char_x_loc -= self.vel
+            self.face_right = False
+            self.face_left = True
+            self.press_fire = -1
+
+        else:
+            win.blit(pygame.image.load(os.path.join("./../HERO_MOVEMENT/standing.png")), (self.char_x_loc,
+                                                                                          self.char_y_loc))
+            self.stepIndex = 0
+            self.press_fire = 0
+
+    def draw(self, win):
+        if self.stepIndex >= 9:
+            self.stepIndex = 0
+
+        if self.after_jumpIndex >= 6:
+            self.after_jumpIndex = 0
+
+        if self.face_left:
+            win.blit(left_movement[self.stepIndex // 4], (self.char_x_loc, self.char_y_loc))
+            self.stepIndex += 1
+            self.face_left = False
+        elif self.face_right:
+            win.blit(right_movement[self.stepIndex // 4], (self.char_x_loc, self.char_y_loc))
+            self.face_right = False
+            self.stepIndex += 1
+        elif self.after_jump:
+            win.blit(after_jump_movement[self.after_jumpIndex], (self.char_x_loc, self.char_y_loc))
+            pygame.time.delay(40)
+            self.after_jumpIndex += 1
+            pygame.time.delay(40)
+            if self.after_jumpIndex >= 6:
+                self.after_jump = False
+        else:
+            win.blit(pygame.image.load(os.path.join("./../HERO_MOVEMENT/standing.png")), (self.char_x_loc,
+                                                                                          self.char_y_loc))
+
+    def jump_motion(self):
+        if user_input[pygame.K_SPACE] and self.jump is False:
+            self.jump = True
+        if self.jump:
+            self.char_y_loc -= self.jump_vel * 4
+            self.jump_vel -= 1
+        if self.jump_vel < -10:
+            self.jump_vel = 10
+            self.jump = False
+            self.after_jump = True
+
+    def direction(self):
+        return self.press_fire
+
+    def shoot(self):
+        if user_input[pygame.K_f]:
+            bullet = BulletMoving(self.char_x_loc, self.char_y_loc, self.direction())
+            self.fire_bullet.append(bullet)
+        for bullet in self.fire_bullet:
+            bullet.move()
+
+
+class BulletMoving:
+
+    def __init__(self, bullet_x, bullet_y, press_fire):
+        self.bullet_x = bullet_x + 27
+        self.bullet_y = bullet_y + 40
+        self.hero_fired = press_fire
+
+    def draw_bullet(self):
+        win.blit(bullet_img, (self.bullet_x, self.bullet_y))
+
+    def move(self):
+        print("Self Fired:", self.hero_fired)
+        print("X direction:", self.bullet_x)
+        if self.hero_fired == 1:
+            self.bullet_x += 15
+        if self.hero_fired == -1:
+            self.bullet_x -= 15
+
+
+def draw_game():
+    win.fill((0, 0, 0))
+    win.blit(bg_scale, (0, 0))
+    player.draw(win)
+    for bullets in player.fire_bullet:
+        BulletMoving.draw_bullet(bullets)
+    pygame.time.delay(30)
+    pygame.display.update()
+
+
+player = Hero(character_loc_x, character_loc_y + 50)
+
+# Main Loop
+run = True
+while run:
+
+    # Quit Game
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+
+    # Input
+    user_input = pygame.key.get_pressed()
+
+    # Shoot
+    player.shoot()
+
+    # Movement
+    player.move_hero()
+    player.jump_motion()
+
+    # Draw Game in Window
+    draw_game()
