@@ -1,0 +1,260 @@
+import pygame
+import os.path
+pygame.init()
+
+width = 1000
+height = 500
+character_loc_x = width / 2
+character_loc_y = height / 2
+win = pygame.display.set_mode((width, height))
+
+# Movement
+left_movement = [None] * 9
+for picIndex in range(1, 10):
+    left_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "L" + str(picIndex) + ".png"))
+    picIndex += 1
+
+right_movement = [None] * 9
+for picIndex in range(1, 10):
+    right_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "R" + str(picIndex) + ".png"))
+    picIndex += 1
+
+after_jump_movement = [None] * 6
+for picIndex in range(1, 7):
+    after_jump_movement[picIndex - 1] = pygame.image.load(os.path.join("./../HERO_MOVEMENT/" + "J" + str(picIndex) +
+                                                                       ".png"))
+    picIndex += 1
+
+# Enemy
+left_enemy = [pygame.image.load(os.path.join("./../ENEMY", "L1E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "L2E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "L3E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "L4E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "L5E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "L6E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "L7E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "L8E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "L9P.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "L10P.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "L11P.png"))
+        ]
+right_enemy = [pygame.image.load(os.path.join("./../ENEMY", "R1E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "R2E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "R3E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "R4E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "R5E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "R6E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "R7E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "R8E.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "R9P.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "R10P.png")),
+        pygame.image.load(os.path.join("./../ENEMY", "R11P.png"))
+        ]
+
+# Bullet
+bullet_img = pygame.transform.scale(pygame.image.load(os.path.join("./../Bullet/light_bullet.png")), (10, 10))
+
+
+# Background
+bg_img = pygame.image.load(os.path.join("download.jpg"))
+bg_scale = pygame.transform.scale(bg_img, (width, height))
+
+
+class Hero:
+
+    def __init__(self, charac_x_loc, charac_y_loc):
+        # Walking
+        self.char_x_loc = charac_x_loc
+        self.char_y_loc = charac_y_loc
+        self.vel = 10
+        self.face_right = False
+        self.face_left = False
+        self.stepIndex = 0
+        self.jump_vel = 10
+        self.after_jumpIndex = 0
+        self.jump = False
+        self.after_jump = False
+        self.fire_bullet = []
+        self.press_fire = 0
+        self.stay_still = True
+        self.cool_down_count = 0
+        self.enemy_alive = True
+
+    def move_hero(self):
+        if user_input[pygame.K_RIGHT] and self.char_x_loc < width - 50 and self.after_jump is False:
+            self.char_x_loc += self.vel
+            self.face_right = True
+            self.face_left = False
+            self.press_fire = 1
+            self.stay_still = False
+
+        elif user_input[pygame.K_LEFT] and self.char_x_loc > 0 and self.after_jump is False:
+            self.char_x_loc -= self.vel
+            self.face_right = False
+            self.face_left = True
+            self.press_fire = -1
+            self.stay_still = False
+
+        else:
+            win.blit(pygame.image.load(os.path.join("./../HERO_MOVEMENT/standing.png")), (self.char_x_loc,
+                                                                                          self.char_y_loc))
+            self.stepIndex = 0
+            self.press_fire = 0
+            self.stay_still = True
+
+    def draw(self, win):
+        if self.stepIndex >= 9:
+            self.stepIndex = 0
+
+        if self.after_jumpIndex >= 6:
+            self.after_jumpIndex = 0
+
+        if self.face_left:
+            win.blit(left_movement[self.stepIndex // 4], (self.char_x_loc, self.char_y_loc))
+            self.stepIndex += 1
+            self.face_left = False
+        elif self.face_right:
+            win.blit(right_movement[self.stepIndex // 4], (self.char_x_loc, self.char_y_loc))
+            self.face_right = False
+            self.stepIndex += 1
+        elif self.after_jump:
+            win.blit(after_jump_movement[self.after_jumpIndex], (self.char_x_loc, self.char_y_loc))
+            pygame.time.delay(40)
+            self.after_jumpIndex += 1
+            pygame.time.delay(40)
+            if self.after_jumpIndex >= 6:
+                self.after_jump = False
+        else:
+            win.blit(pygame.image.load(os.path.join("./../HERO_MOVEMENT/standing.png")), (self.char_x_loc,
+                                                                                          self.char_y_loc))
+
+    def jump_motion(self):
+        if user_input[pygame.K_SPACE] and self.jump is False:
+            self.jump = True
+        if self.jump:
+            self.char_y_loc -= self.jump_vel * 4
+            self.jump_vel -= 1
+        if self.jump_vel < -10:
+            self.jump_vel = 10
+            self.jump = False
+            self.after_jump = True
+
+    def direction(self):
+        return self.press_fire
+
+    def cooldown(self):
+        if self.cool_down_count >= 10:
+            self.cool_down_count = 0
+        elif self.cool_down_count > 0:
+            self.cool_down_count += 1
+
+    def shoot(self):
+        self.cooldown()
+        if user_input[pygame.K_f] and self.stay_still is False and self.cool_down_count == 0:
+            bullet = BulletMoving(self.char_x_loc, self.char_y_loc, self.direction())
+            self.fire_bullet.append(bullet)
+            self.cool_down_count = 1
+        for bullet in self.fire_bullet:
+            bullet.move()
+            if bullet.off_screen():
+                self.fire_bullet.remove(bullet)
+
+    # def hero_enemy(self):
+    #     if self.enemy_alive:
+    #         enemy_left_class = Enemy(self.char_x_loc, self.char_y_loc)
+
+    def hero_current_x_loc(self):
+        return self.char_x_loc
+
+    def hero_current_y_loc(self):
+        return self.char_y_loc
+
+
+
+class BulletMoving:
+
+    def __init__(self, bullet_x, bullet_y, press_fire):
+        self.bullet_x = bullet_x + 27
+        self.bullet_y = bullet_y + 40
+        self.hero_fired = press_fire
+
+    def draw_bullet(self):
+        win.blit(bullet_img, (self.bullet_x, self.bullet_y))
+
+    def move(self):
+        if self.hero_fired == 1:
+            self.bullet_x += 15
+        if self.hero_fired == -1:
+            self.bullet_x -= 15
+
+    def off_screen(self):
+        return not (0 <= self.bullet_x <= width)
+
+
+class Enemy:
+
+    def __init__(self, hero_current_x_point, hero_current_y_point):
+        self.hero_current_point = hero_current_x_point
+        self.hero_y_loc = hero_current_y_point
+        self.enemy_y_loc = hero_current_y_point
+        self.enemy_current_point = 0
+        self.enemyVel = 2
+        self.enemy_moveIndex = 0
+        self.enemy_move_left = True
+
+    def enemy_move(self):
+        self.enemy_current_point += self.enemyVel
+
+    def draw(self):
+        if self.enemy_move_left:
+            win.blit(right_enemy[self.enemy_moveIndex // 4], (self.enemy_current_point, self.enemy_y_loc))
+            self.enemy_moveIndex += 1
+            if self.enemy_moveIndex == 11:
+                self.enemy_moveIndex = 0
+
+    def game_over(self, hero_loc_x, hero_loc_y):
+        print("Enemy current Y:", self.enemy_y_loc)
+        print("Hero current Y:", hero_loc_y)
+
+        if self.enemy_current_point == hero_loc_x and self.enemy_y_loc == hero_loc_y:
+            print("Game Over")
+            exit(0)
+
+
+def draw_game():
+    win.fill((0, 0, 0))
+    win.blit(bg_scale, (0, 0))
+    player.draw(win)
+    enemy.draw()  # Draw the enemy
+    for bullet in player.fire_bullet:
+        bullet.draw_bullet()  # Draw the player's bullets
+    pygame.time.delay(30)
+    pygame.display.update()
+
+
+player = Hero(character_loc_x, character_loc_y + 50)
+enemy = Enemy(character_loc_x, character_loc_y + 50)
+
+# Main Loop
+run = True
+while run:
+
+    # Quit Game
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+
+    # Input
+    user_input = pygame.key.get_pressed()
+
+    # Shoot
+    player.shoot()
+    enemy.enemy_move()
+    enemy.game_over(player.hero_current_x_loc(), player.hero_current_y_loc())
+
+    # Movement
+    player.move_hero()
+    player.jump_motion()
+
+    # Draw Game in Window
+    draw_game()
